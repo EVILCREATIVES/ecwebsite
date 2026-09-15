@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/evil-creatives run build",
+  "outputDirectory": "artifacts/evil-creatives/dist/public",
+  "build": {
+    "env": {
+      "PORT": "18364",
+      "BASE_PATH": "/",
+      "PNPM_CONFIG_VERIFY_DEPS_BEFORE_RUN": "false"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
