@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Evil Creatives"
+version = "1.0.0"
+id = "artifacts/evil-creatives"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18364
+
+[services.development]
+run = "pnpm --filter @workspace/evil-creatives run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/evil-creatives", "run", "build" ]
+publicDir = "artifacts/evil-creatives/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18364"
+BASE_PATH = "/"

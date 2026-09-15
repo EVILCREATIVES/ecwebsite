@@ -1,0 +1,23 @@
+{
+  "name": "Evil Creatives",
+  "short_name": "Evil",
+  "description": "Creative AI studio for brands, video, design, narrative systems, and multimedia experiences.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FF3C00",
+  "theme_color": "#FF3C00",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

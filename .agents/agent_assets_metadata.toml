@@ -1,0 +1,44 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "LDG1BYO2TFxPQEHR8IuNC"
+uri = "file://artifacts/evil-creatives/public/images/ads-portrait.png"
+type = "image"
+title = "ads portrait"
+
+[[generated]]
+id = "zWTIB-QCoFR1pLs94EHCE"
+uri = "file://artifacts/evil-creatives/public/images/ads-city.png"
+type = "image"
+title = "ads city"
+
+[[generated]]
+id = "c-GKcT7MHeZvmWofI0OyL"
+uri = "file://artifacts/evil-creatives/public/images/ads-abstract.png"
+type = "image"
+title = "ads abstract"
+
+[[generated]]
+id = "pBX2zlav8x0UAm032E6lM"
+uri = "file://artifacts/evil-creatives/public/images/ads-people.png"
+type = "image"
+title = "ads people"
+
+[[generated]]
+id = "5ydh7lmQIsDP5HA2oPS28"
+uri = "file://artifacts/evil-creatives/public/images/feature-web.png"
+type = "image"
+title = "feature web"
+
+[[generated]]
+id = "3TqLNFpscW5JYRgQwBoF_"
+uri = "file://artifacts/evil-creatives/public/images/feature-app.png"
+type = "image"
+title = "feature app"
+
+[[generated]]
+id = "mbVlZkgjKkDPLqng42_3i"
+uri = "file://artifacts/evil-creatives/public/images/feature-brand.png"
+type = "image"
+title = "feature brand"
