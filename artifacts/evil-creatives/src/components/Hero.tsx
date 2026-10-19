@@ -9,12 +9,17 @@ export default function Hero() {
   return (
     <section id="hero" className="relative min-h-[100dvh] flex flex-col overflow-hidden bg-[#f2f0eb] text-[#0d0d0d]">
       {/* Faded "nun" figure as light backdrop */}
-      <div className="absolute inset-0 z-0 flex items-center justify-end">
-        <Parallax range={70} className="h-full">
+      <div className="absolute inset-0 z-0">
+        {/* Overscan by the parallax range so the image never leaves a gap at top/bottom */}
+        <Parallax
+          range={70}
+          className="inset-x-0 -top-[70px] -bottom-[70px]"
+          style={{ position: "absolute" }}
+        >
           <img
             src="/images/site-img3.png"
             alt=""
-            className="h-full w-auto max-w-none object-cover object-center opacity-90 mix-blend-multiply md:translate-x-[10%]"
+            className="w-full h-full object-cover object-[75%_center] opacity-90 mix-blend-multiply"
           />
         </Parallax>
         <div className="absolute inset-0 bg-gradient-to-r from-[#f2f0eb] via-[#f2f0eb]/40 to-transparent" />
