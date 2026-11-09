@@ -26,18 +26,32 @@ const pillars = [
 const products = [
   {
     num: "01",
-    name: "MATCHPOINT",
-    tag: "Vertical AI / AI Tennis Training Platform",
-    meta: "Vertical AI / Sports Coaching Platform",
-    goal: "Create a domain-specific coaching system capable of translating tennis methodology into structured player development.",
-    approach: "Training plans, session tracking, video analysis, lesson recommendations and goal progression live inside one player development environment.",
-    style: "Clean, athletic, disciplined and performance-oriented. The interface feels closer to a training dashboard than a generic AI chat tool.",
-    achievement: "Demonstrates how AI becomes valuable when it understands a discipline, not when it simply answers questions.",
-    image: "images/product-matchpoint.png",
+    name: "LUMEN",
+    url: "https://www.visit-lumen.com/",
+    tag: "World Activation Engine",
+    meta: "Attractions / Museums / Parks / Visitor Media",
+    goal: "Turn attractions into media ecosystems.",
+    approach: "Organizations upload the world. LUMEN understands it, activates visitors through personalized media and extends the experience beyond the exit.",
+    style: "Premium, cinematic and entertainment-driven. The product should feel like a portal into a brand world, not an admin tool.",
+    achievement: "Creates a new layer of engagement and monetization for parks, museums, cruises, live events and cultural destinations.",
+    image: "images/product-lumen.png",
   },
   {
     num: "02",
+    name: "IKI",
+    url: "https://iki-pink.vercel.app",
+    tag: "Creative AI for Fashion Content",
+    meta: "Brand Memory / Sketch-to-Image / Human Review",
+    goal: "Generate fashion content at AI scale without altering products, diluting identity or breaking visual consistency.",
+    approach: "Product assets, approved references, brand rules and narrative direction become a persistent brand memory that guides and validates every generation: Sketch → Brand Memory → Generation → Human Review.",
+    style: "Calm, tactile and studio-like. A drawing canvas instead of a prompt box, so designers stay in control of the idea.",
+    achievement: "AI-scale content production that keeps product accuracy, visual consistency and fidelity to the brand.",
+    image: "images/product-iki.jpg",
+  },
+  {
+    num: "03",
     name: "STORYLINE",
+    url: "https://storyline-one.vercel.app",
     tag: "Narrative Intelligence Platform",
     meta: "Archives / Letters / Canon Management / Authorship",
     goal: "Transform fragmented archives into coherent stories.",
@@ -47,19 +61,21 @@ const products = [
     image: "images/product-storyline.png",
   },
   {
-    num: "03",
-    name: "CC GEOTARGET",
-    tag: "Geospatial Intake Platform",
-    meta: "AOI Definition / KMZ Generation / Survey Qualification",
-    goal: "Reduce friction between survey inquiry and technical evaluation.",
-    approach: "The client defines an area of interest, selects survey needs, uploads geospatial data and produces a structured request that can be qualified by AI.",
-    style: "Operational, scientific and clear. It makes a complex technical sales process feel simple and credible.",
-    achievement: "Turns geospatial lead qualification into an interactive product instead of an email chain.",
-    image: "images/product-geotarget.png",
+    num: "04",
+    name: "MARKET-AGENT",
+    url: "https://market-agent-lime-gamma.vercel.app",
+    tag: "Autonomous Marketing Operator",
+    meta: "Product Brain / Market Research / Campaigns / Channel Execution",
+    goal: "Give every project an autonomous marketing operator that turns source material into accurate, approved campaigns and measurable growth.",
+    approach: "Market Agent learns each brand from its sources, researches its market, combines independent strategic perspectives, and prepares or executes approved work through connected channels.",
+    style: "Clear, proactive, brand-aware, evidence-led, and concise—never repetitive, superficial, pushy, or invented.",
+    achievement: "Users move from raw documents and connected accounts to ready-to-publish campaigns, assets, distribution, and performance insight with minimal manual work.",
+    image: "images/product-market-agent.png",
   },
   {
-    num: "04",
-    name: "GEO-APP",
+    num: "05",
+    name: "CC GEO LAB",
+    url: "https://www.ccexplorations.com/geolab",
     tag: "AI Geospatial Intelligence",
     meta: "3D Data Visualization / Anomaly Interpretation / Decision Support",
     goal: "Transform raw exploration datasets into interpretable intelligence.",
@@ -69,27 +85,17 @@ const products = [
     image: "images/product-geoapp.png",
   },
   {
-    num: "05",
-    name: "CHESS MASTER",
-    tag: "AI Tutoring Prototype",
-    meta: "Strategy Training / AI Advice / Learning Interface",
-    goal: "Explore how AI can act as a strategic tutor inside an interactive game environment.",
-    approach: "Gameplay, move history, captured pieces and AI advice are integrated into one learning flow.",
-    style: "Simple, legible and instructional. The interface is designed for clarity rather than spectacle.",
-    achievement: "Shows how AI tutoring can be embedded directly into practice, not separated into a help window.",
-    image: "images/product-chessmaster.png",
-  },
-  {
     num: "06",
-    name: "LUMEN",
-    tag: "World Activation Engine",
-    meta: "Attractions / Museums / Parks / Visitor Media",
-    goal: "Turn attractions into media ecosystems.",
-    approach: "Organizations upload the world. LUMEN understands it, activates visitors through personalized media and extends the experience beyond the exit.",
-    style: "Premium, cinematic and entertainment-driven. The product should feel like a portal into a brand world, not an admin tool.",
-    achievement: "Creates a new layer of engagement and monetization for parks, museums, cruises, live events and cultural destinations.",
-    image: "images/product-lumen.png",
-  },
+    name: "CC GEOTARGET",
+    url: "https://www.ccexplorations.com/#form",
+    tag: "Geospatial Intake Platform",
+    meta: "AOI Definition / KMZ Generation / Survey Qualification",
+    goal: "Reduce friction between survey inquiry and technical evaluation.",
+    approach: "The client defines an area of interest, selects survey needs, uploads geospatial data and produces a structured request that can be qualified by AI.",
+    style: "Operational, scientific and clear. It makes a complex technical sales process feel simple and credible.",
+    achievement: "Turns geospatial lead qualification into an interactive product instead of an email chain.",
+    image: "images/product-geotarget.png",
+  }
 ];
 
 const capabilities = [
@@ -100,9 +106,6 @@ const capabilities = [
   { title: "Experience Platforms", body: "Visitor activation, persistent engagement and new monetization layers." },
   { title: "Rapid Prototyping", body: "Lean production from concept to deployed application." },
 ];
-
-const aiContribution =
-  "AI supported product structure, rapid interface development, content logic, model workflow design and iteration. Human creative direction defined the positioning, user value, information architecture, taste and final product logic.";
 
 const detailFields: { label: string; key: "goal" | "approach" | "style" | "achievement" }[] = [
   { label: "Goal", key: "goal" },
@@ -162,7 +165,7 @@ export default function AppDevelopmentDetail() {
           className="group inline-flex items-center gap-2 font-display text-[11px] tracking-[0.25em] uppercase text-white/60 hover:text-primary transition-colors"
         >
           <span className="transition-transform group-hover:-translate-x-1">←</span>
-          Back To Site
+          Back To Home Page
         </Link>
       </header>
 
@@ -261,14 +264,19 @@ export default function AppDevelopmentDetail() {
                       </div>
                     ))}
                   </div>
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`link-visit-${p.num}`}
+                    className="group mt-10 inline-flex items-center gap-3 border border-primary/60 text-primary font-display text-xs tracking-[0.25em] uppercase px-7 py-4 hover:bg-primary hover:text-background transition-colors"
+                  >
+                    Visit {p.name}
+                    <span className="transition-transform group-hover:translate-x-1">↗</span>
+                  </a>
                 </div>
               </div>
 
-              {/* What AI contributed */}
-              <div className={`mt-10 px-6 md:px-8 py-6 border ${dark ? "bg-white/[0.03] border-white/8" : "bg-[#0d0d0d]/[0.03] border-[#0d0d0d]/12"}`}>
-                <p className={`font-display text-[10px] tracking-[0.25em] uppercase mb-2 ${dark ? "text-white/45" : "text-[#0d0d0d]/55"}`}>What AI Contributed</p>
-                <p className={`font-sans text-sm leading-relaxed font-light max-w-4xl ${dark ? "text-white/55" : "text-[#0d0d0d]/65"}`}>{aiContribution}</p>
-              </div>
             </motion.article>
           </section>
         );
@@ -319,7 +327,7 @@ export default function AppDevelopmentDetail() {
             className="group mt-12 inline-flex items-center gap-3 border border-primary/60 text-primary font-display text-xs tracking-[0.25em] uppercase px-7 py-4 hover:bg-primary hover:text-background transition-colors"
           >
             <span className="transition-transform group-hover:-translate-x-1">←</span>
-            Back To Site
+            Back To Home Page
           </Link>
         </div>
       </section>

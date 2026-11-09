@@ -115,7 +115,7 @@ export default function WebDevelopmentDetail() {
           className="group inline-flex items-center gap-2 font-display text-[11px] tracking-[0.25em] uppercase text-white/60 hover:text-primary transition-colors"
         >
           <span className="transition-transform group-hover:-translate-x-1">←</span>
-          Back To Site
+          Back To Home Page
         </Link>
       </header>
 
@@ -228,7 +228,7 @@ export default function WebDevelopmentDetail() {
             className="group inline-flex items-center gap-3 border border-primary/60 text-primary font-display text-xs tracking-[0.25em] uppercase px-7 py-4 hover:bg-primary hover:text-background transition-colors"
           >
             <span className="transition-transform group-hover:-translate-x-1">←</span>
-            Back To Site
+            Back To Home Page
           </Link>
         </div>
       </section>

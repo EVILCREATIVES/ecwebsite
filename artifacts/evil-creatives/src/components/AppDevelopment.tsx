@@ -3,12 +3,12 @@ import { Link } from "wouter";
 import { GridFX } from "@/components/BackgroundFX";
 
 const products = [
-  "Matchpoint",
-  "Storyline",
-  "CC Geotarget",
-  "Geo-App",
-  "Chess Master",
   "Lumen",
+  "IKI",
+  "Storyline",
+  "Market-Agent",
+  "CC Geo Lab",
+  "CC Geotarget",
 ];
 
 export default function AppDevelopment() {

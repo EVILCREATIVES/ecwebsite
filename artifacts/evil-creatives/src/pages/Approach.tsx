@@ -1,6 +1,10 @@
 import { motion, useInView } from "framer-motion";
 import { Link } from "wouter";
 import { useEffect, useRef } from "react";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+const HOWTO_DECK_URL = "https://www.figma.com/deck/EJr7SFi1tTgm1jFdTgvw7b";
+const HOWTO_EMBED_URL = "https://embed.figma.com/deck/EJr7SFi1tTgm1jFdTgvw7b?embed-host=evilcreatives";
 import Footer from "@/components/Footer";
 import { GridFX, Parallax } from "@/components/BackgroundFX";
 import Typewriter from "@/components/Typewriter";
@@ -60,7 +64,7 @@ export default function Approach() {
           className="group inline-flex items-center gap-2 font-display text-[11px] tracking-[0.25em] uppercase text-white/60 hover:text-primary transition-colors"
         >
           <span className="transition-transform group-hover:-translate-x-1">←</span>
-          Back To Site
+          Back To Home Page
         </Link>
       </header>
 
@@ -97,6 +101,37 @@ export default function Approach() {
               cursorClassName="text-primary"
             />
           </div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                data-testid="button-howto"
+                className="mt-10 inline-flex items-center gap-3 bg-primary text-black font-display text-xs tracking-[0.25em] uppercase px-8 py-4 hover:bg-[#0d0d0d] hover:text-white transition-colors"
+              >
+                How To
+                <span>→</span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[min(1200px,94vw)] w-full p-0 gap-0 bg-[#0d0d0d] border-white/10 overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3 pr-12 border-b border-white/10">
+                <DialogTitle className="font-display text-xs tracking-[0.25em] uppercase text-white/70">How To — The EVIL Method</DialogTitle>
+                <a
+                  href={HOWTO_DECK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-display text-[10px] tracking-[0.25em] uppercase text-primary hover:text-white transition-colors"
+                >
+                  Open in Figma ↗
+                </a>
+              </div>
+              <iframe
+                src={HOWTO_EMBED_URL}
+                title="How To — Figma deck"
+                className="block w-full h-[min(75vh,680px)] border-0"
+                allowFullScreen
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </section>
 
