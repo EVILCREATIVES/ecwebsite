@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { useEffect } from "react";
 import Footer from "@/components/Footer";
+import UnleashButton from "@/components/UnleashButton";
 import { GridFX } from "@/components/BackgroundFX";
 
 const pillars = [
@@ -159,14 +160,18 @@ export default function AppDevelopmentDetail() {
         >
           Evil Creatives
         </Link>
+        <div className="flex items-center gap-5 md:gap-8">
         <Link
           href="/"
           data-testid="link-back-home"
           className="group inline-flex items-center gap-2 font-display text-[11px] tracking-[0.25em] uppercase text-white/60 hover:text-primary transition-colors"
         >
           <span className="transition-transform group-hover:-translate-x-1">←</span>
-          Back To Home Page
+          <span className="hidden sm:inline">Back To Home Page</span>
+          <span className="sm:hidden">Home</span>
         </Link>
+        <UnleashButton />
+        </div>
       </header>
 
       {/* Hero (dark) */}

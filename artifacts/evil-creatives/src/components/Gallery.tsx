@@ -1,25 +1,8 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { GridFX } from "@/components/BackgroundFX";
+import { resolveSrc, useSiteContent, type MediaItem } from "@/lib/siteContent";
 
-type GalleryItem = { src: string; label: string; video?: boolean; contain?: boolean };
-
-const rowOne: GalleryItem[] = [
-  { src: "/images/gallery-brandworlds.png", label: "Brand Worlds" },
-  { src: "/images/site-img5.png", label: "Concept Film" },
-  { src: "/images/gallery-lumen-park.png", label: "Multimedia Activation" },
-  { src: "/images/site-img6.png", label: "Type & Identity" },
-  { src: "/images/case6.png", label: "Photo-Reportage" },
-];
-
-const rowTwo: GalleryItem[] = [
-  { src: "/images/site-img10.png", label: "Narrative Campaigns" },
-  { src: "/images/site-img2.png", label: "Social Content" },
-  { src: "/images/interface-lumen.png", label: "Interface Systems" },
-  { src: "/videos/gallery-dome.mp4", video: true, label: "3D & Spatial" },
-  { src: "/images/site-img7.png", label: "Docu-Series" },
-];
-
-function Marquee({ items, reverse = false }: { items: GalleryItem[]; reverse?: boolean }) {
+function Marquee({ items, reverse = false }: { items: MediaItem[]; reverse?: boolean }) {
   const loop = [...items, ...items];
   const reduceMotion = useReducedMotion();
   return (
@@ -35,9 +18,9 @@ function Marquee({ items, reverse = false }: { items: GalleryItem[]; reverse?: b
             className="group relative w-[300px] md:w-[420px] aspect-[16/10] shrink-0 overflow-hidden bg-[#111]"
             data-testid={`gallery-item-${reverse ? "b" : "a"}-${i}`}
           >
-            {"video" in item && item.video ? (
+            {item.video ? (
               <video
-                src={item.src}
+                src={resolveSrc(item.src)}
                 autoPlay
                 loop
                 muted
@@ -46,9 +29,10 @@ function Marquee({ items, reverse = false }: { items: GalleryItem[]; reverse?: b
               />
             ) : (
               <img
-                src={item.src}
+                src={resolveSrc(item.src)}
                 alt={item.label}
-                className={`absolute inset-0 w-full h-full ${item.contain ? "object-contain" : "object-cover"} transition-transform duration-700 group-hover:scale-105`}
+                loading="lazy"
+                className={`absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105`}
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity" />
@@ -63,12 +47,13 @@ function Marquee({ items, reverse = false }: { items: GalleryItem[]; reverse?: b
 }
 
 export default function Gallery() {
+  const { data } = useSiteContent();
   return (
-    <section id="gallery" className="relative bg-[#0c0c0c] py-0 overflow-hidden">
+    <section id="works" className="relative bg-[#0c0c0c] py-0 overflow-hidden">
       <GridFX pattern="grid" />
       {/* Section label bar */}
       <div className="relative z-10 border-y border-white/8 px-8 md:px-14 py-4 flex items-center justify-between">
-        <span className="font-display text-xs tracking-[0.25em] text-white/40 uppercase">Creative Range</span>
+        <span className="font-display text-xs tracking-[0.25em] text-white/40 uppercase">Works</span>
         <span className="font-display text-xs tracking-[0.2em] text-white/30 uppercase">A Studio Without a House Style</span>
       </div>
 
@@ -89,8 +74,15 @@ export default function Gallery() {
 
       {/* Two marquee rows */}
       <div className="relative z-10 flex flex-col gap-5 pb-20">
-        <Marquee items={rowOne} />
-        <Marquee items={rowTwo} reverse />
+        {data ? (
+          <>
+            {data.works.rowOne.length > 0 && <Marquee items={data.works.rowOne} />}
+            {data.works.rowTwo.length > 0 && <Marquee items={data.works.rowTwo} reverse />}
+          </>
+        ) : (
+          // Reserve the rows' height while content loads, so the page doesn't jump.
+          <div className="h-[calc(2*(300px*10/16)+1.25rem)] md:h-[calc(2*(420px*10/16)+1.25rem)]" />
+        )}
       </div>
     </section>
   );

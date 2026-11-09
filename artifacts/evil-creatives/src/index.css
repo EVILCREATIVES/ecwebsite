@@ -159,3 +159,10 @@
     animation: none;
   }
 }
+
+.campaign-strip {
+  scrollbar-width: none;
+}
+.campaign-strip::-webkit-scrollbar {
+  display: none;
+}

@@ -56,7 +56,7 @@ export default function Navbar() {
   }, []);
 
   const links = [
-    { href: "#gallery", label: "Range" },
+    { href: "#works", label: "Works" },
     { href: "#methodology", label: "Methodology" },
     { href: "#studio", label: "Studio" },
     { href: "#app-development", label: "Apps" },
@@ -158,6 +158,13 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
+          <a
+            href="mailto:unleash@evilcreatives.com"
+            onClick={() => setMobileOpen(false)}
+            className="mt-4 border border-primary/70 text-primary font-display text-xl tracking-widest uppercase px-8 py-3 hover:bg-primary hover:text-black transition-colors"
+          >
+            Unleash
+          </a>
         </motion.div>
       )}
     </>

@@ -7,6 +7,10 @@ import Home from "@/pages/Home";
 import WebDevelopmentDetail from "@/pages/WebDevelopmentDetail";
 import AppDevelopmentDetail from "@/pages/AppDevelopmentDetail";
 import Approach from "@/pages/Approach";
+import { lazy, Suspense } from "react";
+
+// Loaded on demand so the admin code never ships with the public pages.
+const Admin = lazy(() => import("@/pages/Admin"));
 
 const queryClient = new QueryClient();
 
@@ -17,6 +21,11 @@ function Router() {
       <Route path="/web-development" component={WebDevelopmentDetail} />
       <Route path="/app-development" component={AppDevelopmentDetail} />
       <Route path="/approach" component={Approach} />
+      <Route path="/admin">
+        <Suspense fallback={null}>
+          <Admin />
+        </Suspense>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

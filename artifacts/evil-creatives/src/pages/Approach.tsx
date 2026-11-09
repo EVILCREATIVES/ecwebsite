@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/
 const HOWTO_DECK_URL = "https://www.figma.com/deck/EJr7SFi1tTgm1jFdTgvw7b";
 const HOWTO_EMBED_URL = "https://embed.figma.com/deck/EJr7SFi1tTgm1jFdTgvw7b?embed-host=evilcreatives";
 import Footer from "@/components/Footer";
+import UnleashButton from "@/components/UnleashButton";
 import { GridFX, Parallax } from "@/components/BackgroundFX";
 import Typewriter from "@/components/Typewriter";
 
@@ -58,14 +59,18 @@ export default function Approach() {
         >
           Evil Creatives
         </Link>
+        <div className="flex items-center gap-5 md:gap-8">
         <Link
           href="/"
           data-testid="link-back-home"
           className="group inline-flex items-center gap-2 font-display text-[11px] tracking-[0.25em] uppercase text-white/60 hover:text-primary transition-colors"
         >
           <span className="transition-transform group-hover:-translate-x-1">←</span>
-          Back To Home Page
+          <span className="hidden sm:inline">Back To Home Page</span>
+          <span className="sm:hidden">Home</span>
         </Link>
+        <UnleashButton />
+        </div>
       </header>
 
       {/* 1 — Manifesto hero (bright) */}
