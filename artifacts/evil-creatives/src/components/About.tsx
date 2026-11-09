@@ -5,12 +5,11 @@ import { GridFX } from "@/components/BackgroundFX";
 // Add `logo` (path under public/) when a clean logo file is available;
 // clients without one render as a styled name.
 const clients: { name: string; logo?: string; badge?: boolean }[] = [
-  { name: "NFL" },
   { name: "PVH", logo: "images/clients/pvh.png", badge: true },
   { name: "Michael Kors", logo: "images/clients/michael-kors.png" },
-  { name: "The New York Times" },
+  { name: "The New York Times", logo: "images/clients/new-york-times.png" },
   { name: "Phillips Auction" },
-  { name: "Aldi" },
+  { name: "Aldi", logo: "images/clients/aldi.png", badge: true },
   { name: "CC-Explorations", logo: "images/clients/cc-explorations.png", badge: true },
   { name: "QuickTime", logo: "images/clients/quicktime.png" },
   { name: "Guardian Alarm", logo: "images/clients/guardian-alarm.png", badge: true },
