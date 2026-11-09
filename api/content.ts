@@ -1,5 +1,5 @@
 import { del, list, put } from "@vercel/blob";
-import { isAuthorized, json } from "./_auth.js";
+import { isAuthorized, isConfigured, json } from "./_auth.js";
 
 // Site content edited from /admin is stored as a JSON file in Vercel Blob.
 // Every save writes a new file (random suffix) so CDN caching can never serve
@@ -71,6 +71,9 @@ export async function PUT(request: Request): Promise<Response> {
 
 // Lets the admin page check a password without saving anything.
 export async function POST(request: Request): Promise<Response> {
+  if (!isConfigured()) {
+    return json({ ok: false, error: "not-configured" }, 503);
+  }
   const ok = isAuthorized(request.headers.get("x-admin-password"));
   return json({ ok }, ok ? 200 : 401);
 }

@@ -33,10 +33,11 @@ function writePw(pw: string | null) {
   }
 }
 
-async function checkPassword(pw: string): Promise<"ok" | "wrong" | "unavailable"> {
+async function checkPassword(pw: string): Promise<"ok" | "wrong" | "unavailable" | "not-configured"> {
   try {
     const res = await fetch(`${base}api/content`, { method: "POST", headers: { "x-admin-password": pw } });
     if (res.status === 401) return "wrong";
+    if (res.status === 503) return "not-configured";
     if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) return "unavailable";
     return "ok";
   } catch {
@@ -75,6 +76,8 @@ function Login({ onSuccess }: { onSuccess: (pw: string) => void }) {
           setBusy(false);
           if (result === "ok") onSuccess(pw);
           else if (result === "wrong") setError("Wrong password.");
+          else if (result === "not-configured")
+            setError("No admin password is set on the server. Add ADMIN_PASSWORD in Vercel (Production) and redeploy.");
           else setError("The admin service isn't reachable. It only works on the deployed site (Vercel).");
         }}
       >
