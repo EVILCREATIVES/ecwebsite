@@ -136,3 +136,26 @@
 .animate-cursor-blink {
   animation: cursor-blink 1s steps(1, end) infinite;
 }
+
+@keyframes client-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-client-marquee {
+  animation: client-marquee 40s linear infinite;
+}
+
+.client-marquee:hover .animate-client-marquee {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-client-marquee {
+    animation: none;
+  }
+}

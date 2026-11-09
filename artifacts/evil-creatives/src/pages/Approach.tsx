@@ -102,16 +102,18 @@ export default function Approach() {
             />
           </div>
           <Dialog>
+            <div className="mt-10 flex justify-end">
             <DialogTrigger asChild>
               <button
                 type="button"
                 data-testid="button-howto"
-                className="mt-10 inline-flex items-center gap-3 bg-primary text-black font-display text-xs tracking-[0.25em] uppercase px-8 py-4 hover:bg-[#0d0d0d] hover:text-white transition-colors"
+                className="inline-flex items-center gap-3 bg-primary text-black font-display text-xs tracking-[0.25em] uppercase px-8 py-4 hover:bg-[#0d0d0d] hover:text-white transition-colors"
               >
                 How To
                 <span>→</span>
               </button>
             </DialogTrigger>
+            </div>
             <DialogContent className="max-w-[min(1200px,94vw)] w-full p-0 gap-0 bg-[#0d0d0d] border-white/10 overflow-hidden">
               <div className="flex items-center justify-between px-5 py-3 pr-12 border-b border-white/10">
                 <DialogTitle className="font-display text-xs tracking-[0.25em] uppercase text-white/70">How To — The EVIL Method</DialogTitle>

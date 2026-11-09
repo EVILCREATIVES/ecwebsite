@@ -2,12 +2,41 @@ import { motion } from "framer-motion";
 import WordCube from "@/components/WordCube";
 import { GridFX } from "@/components/BackgroundFX";
 
-const clients = [
-  "Amazon", "Samsung", "Google", "NFL", "Sephora",
-  "Michael Kors", "Microsoft", "Mercedes-Benz", "JPMorgan",
-  "The New York Times", "Wyclef Jean", "Phillips Auction",
-  "Aldi", "CC-Explorations", "QuickTime", "Threadline",
+// Add `logo` (path under public/) when a clean logo file is available;
+// clients without one render as a styled name.
+const clients: { name: string; logo?: string }[] = [
+  { name: "NFL" },
+  { name: "Sephora" },
+  { name: "Michael Kors" },
+  { name: "The New York Times" },
+  { name: "Phillips Auction" },
+  { name: "Aldi" },
+  { name: "CC-Explorations", logo: "images/clients/cc-explorations.png" },
+  { name: "QuickTime" },
+  { name: "Guardian Alarms", logo: "images/clients/guardian.svg" },
+  { name: "GutterMaxx", logo: "images/clients/guttermaxx.webp" },
+  { name: "SpokenLayer" },
+  { name: "Agentio", logo: "images/clients/agentio.png" },
 ];
+
+function ClientItem({ name, logo, hidden }: { name: string; logo?: string; hidden?: boolean }) {
+  return (
+    <li aria-hidden={hidden || undefined} className="shrink-0 flex items-center px-8 md:px-10 opacity-50 hover:opacity-100 transition-opacity">
+      {logo ? (
+        <img
+          src={`${import.meta.env.BASE_URL}${logo}`}
+          alt={name}
+          loading="lazy"
+          className="h-6 md:h-7 w-auto max-w-[160px] object-contain brightness-0 invert"
+        />
+      ) : (
+        <span className="font-display text-sm md:text-base tracking-[0.18em] uppercase text-white whitespace-nowrap">
+          {name}
+        </span>
+      )}
+    </li>
+  );
+}
 
 export default function About() {
   return (
@@ -45,11 +74,8 @@ export default function About() {
               AI Creates<br />Infinite Paths.<br />
               <span className="text-primary">Humans</span> Build<br />The Meaning.
             </h2>
-            <p className="text-white/65 font-sans leading-relaxed mb-6 text-base font-light">
-              Evil Creatives is a creative AI studio that pairs senior creative direction with AI execution — building intelligent products, narrative systems, and experience platforms for brands ready to move beyond demos.
-            </p>
-            <p className="text-white/45 font-sans leading-relaxed text-sm font-light">
-              The machine generates endless possibility. Taste, strategy, and judgment decide what should exist, why it matters, and how it speaks. Click a word to draw the connections.
+            <p className="text-white/65 font-sans leading-relaxed text-base font-light">
+              Evil Creatives is a creative studio that blends senior creative direction, traditional craft, and AI execution — building intelligent products, narrative systems, and experience platforms for brands ready to scale beyond the unimaginable.
             </p>
           </motion.div>
 
@@ -62,12 +88,18 @@ export default function About() {
             className="mt-16 pt-10 border-t border-white/10"
           >
             <p className="font-display text-[10px] tracking-[0.25em] text-white/40 uppercase mb-6">Clients include</p>
-            <div className="flex flex-wrap gap-x-5 gap-y-3">
-              {clients.map((client, i) => (
-                <span key={i} className="text-white/45 font-sans text-sm hover:text-white transition-colors cursor-default">
-                  {client}
-                </span>
-              ))}
+            <div
+              className="client-marquee relative overflow-hidden"
+              style={{
+                maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+                WebkitMaskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+              }}
+            >
+              <ul className="animate-client-marquee flex w-max items-center py-2" aria-label="Clients">
+                {[...clients, ...clients].map((c, i) => (
+                  <ClientItem key={i} {...c} hidden={i >= clients.length} />
+                ))}
+              </ul>
             </div>
           </motion.div>
         </div>
