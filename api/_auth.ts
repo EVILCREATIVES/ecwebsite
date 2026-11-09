@@ -32,5 +32,11 @@ export function blobToken(): string | undefined {
   return key ? process.env[key] : undefined;
 }
 
+// A store connected over OIDC (Vercel's current default) provides BLOB_STORE_ID
+// instead of a read-write token; the SDK then authenticates automatically.
+export function blobConfigured(): boolean {
+  return Boolean(blobToken() || process.env.BLOB_STORE_ID);
+}
+
 export const NO_BLOB_TOKEN =
-  "Blob storage isn't connected: no BLOB_READ_WRITE_TOKEN on this deployment. Connect a Blob store to the project (Production) and redeploy.";
+  "Blob storage isn't connected to this deployment (no BLOB_STORE_ID or BLOB_READ_WRITE_TOKEN). Connect the Blob store to the project for Production and redeploy.";

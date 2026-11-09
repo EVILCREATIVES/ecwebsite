@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { upload } from "@vercel/blob/client";
+import { uploadPresigned } from "@vercel/blob/client";
 import {
   CONTENT_QUERY_KEY,
   defaultContent,
@@ -111,7 +111,7 @@ function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
 }
 
-// The Blob client only reports "Failed to retrieve the client token"; ask the
+// The Blob client only reports "Failed to retrieve the presigned URL"; ask the
 // server directly so the admin sees the real reason.
 async function explainUploadFailure(pathname: string, pw: string): Promise<string | null> {
   try {
@@ -119,7 +119,7 @@ async function explainUploadFailure(pathname: string, pw: string): Promise<strin
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        type: "blob.generate-client-token",
+        type: "blob.generate-presigned-url",
         payload: { pathname, clientPayload: JSON.stringify({ password: pw }), multipart: false },
       }),
     });
@@ -134,7 +134,7 @@ async function explainUploadFailure(pathname: string, pw: string): Promise<strin
 async function uploadFile(file: File, folder: string, pw: string): Promise<MediaItem["src"]> {
   const pathname = `${folder}/${safeName(file.name)}`;
   try {
-    const blob = await upload(pathname, file, {
+    const blob = await uploadPresigned(pathname, file, {
       access: "public",
       handleUploadUrl: `${base}api/upload`,
       clientPayload: JSON.stringify({ password: pw }),

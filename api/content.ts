@@ -1,5 +1,5 @@
 import { del, list, put } from "@vercel/blob";
-import { blobToken, isAuthorized, isConfigured, json, NO_BLOB_TOKEN } from "./_auth.js";
+import { blobConfigured, blobToken, isAuthorized, isConfigured, json, NO_BLOB_TOKEN } from "./_auth.js";
 
 // Site content edited from /admin is stored as a JSON file in Vercel Blob.
 // Every save writes a new file (random suffix) so CDN caching can never serve
@@ -53,7 +53,7 @@ export async function PUT(request: Request): Promise<Response> {
   if (!b?.works || !validItems(b.works.rowOne) || !validItems(b.works.rowTwo) || !validItems(b.campaigns)) {
     return json({ error: "Content does not match the expected shape" }, 400);
   }
-  if (!blobToken()) return json({ error: NO_BLOB_TOKEN }, 503);
+  if (!blobConfigured()) return json({ error: NO_BLOB_TOKEN }, 503);
   const content = {
     works: { rowOne: b.works.rowOne, rowTwo: b.works.rowTwo },
     campaigns: b.campaigns,
