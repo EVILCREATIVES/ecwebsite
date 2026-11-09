@@ -4,30 +4,30 @@ import { GridFX } from "@/components/BackgroundFX";
 
 // Add `logo` (path under public/) when a clean logo file is available;
 // clients without one render as a styled name.
-const clients: { name: string; logo?: string }[] = [
+const clients: { name: string; logo?: string; badge?: boolean }[] = [
   { name: "NFL" },
-  { name: "Sephora" },
-  { name: "Michael Kors" },
+  { name: "PVH", logo: "images/clients/pvh.png", badge: true },
+  { name: "Michael Kors", logo: "images/clients/michael-kors.png" },
   { name: "The New York Times" },
   { name: "Phillips Auction" },
   { name: "Aldi" },
-  { name: "CC-Explorations", logo: "images/clients/cc-explorations.png" },
-  { name: "QuickTime" },
-  { name: "Guardian Alarms", logo: "images/clients/guardian.svg" },
-  { name: "GutterMaxx", logo: "images/clients/guttermaxx.webp" },
-  { name: "SpokenLayer" },
+  { name: "CC-Explorations", logo: "images/clients/cc-explorations.png", badge: true },
+  { name: "QuickTime", logo: "images/clients/quicktime.png" },
+  { name: "Guardian Alarm", logo: "images/clients/guardian-alarm.png", badge: true },
+  { name: "GutterMaxx", logo: "images/clients/guttermaxx.png" },
+  { name: "SpokenLayer", logo: "images/clients/spokenlayer.png" },
   { name: "Agentio", logo: "images/clients/agentio.png" },
 ];
 
-function ClientItem({ name, logo, hidden }: { name: string; logo?: string; hidden?: boolean }) {
+function ClientItem({ name, logo, badge, hidden }: { name: string; logo?: string; badge?: boolean; hidden?: boolean }) {
   return (
-    <li aria-hidden={hidden || undefined} className="shrink-0 flex items-center px-8 md:px-10 opacity-50 hover:opacity-100 transition-opacity">
+    <li aria-hidden={hidden || undefined} className="shrink-0 flex items-center px-8 md:px-10 opacity-70 hover:opacity-100 transition-opacity">
       {logo ? (
         <img
           src={`${import.meta.env.BASE_URL}${logo}`}
           alt={name}
           loading="lazy"
-          className="h-6 md:h-7 w-auto max-w-[160px] object-contain brightness-0 invert"
+          className={`${badge ? "h-10 md:h-12" : "h-5 md:h-6"} w-auto max-w-[220px] object-contain`}
         />
       ) : (
         <span className="font-display text-sm md:text-base tracking-[0.18em] uppercase text-white whitespace-nowrap">
@@ -61,7 +61,7 @@ export default function About() {
       {/* Statement + cube */}
       <div className="relative grid grid-cols-1 lg:grid-cols-12">
         {/* Left: concept statement */}
-        <div className="lg:col-span-5 px-8 md:px-14 py-20 flex flex-col justify-between border-r border-white/10">
+        <div className="lg:col-span-5 px-8 md:px-14 py-20 flex flex-col justify-center border-r border-white/10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -78,30 +78,6 @@ export default function About() {
               Evil Creatives is a creative studio that blends senior creative direction, traditional craft, and AI execution — building intelligent products, narrative systems, and experience platforms for brands ready to scale beyond the unimaginable.
             </p>
           </motion.div>
-
-          {/* Clients */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="mt-16 pt-10 border-t border-white/10"
-          >
-            <p className="font-display text-[10px] tracking-[0.25em] text-white/40 uppercase mb-6">Clients include</p>
-            <div
-              className="client-marquee relative overflow-hidden"
-              style={{
-                maskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-                WebkitMaskImage: "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
-              }}
-            >
-              <ul className="animate-client-marquee flex w-max items-center py-2" aria-label="Clients">
-                {[...clients, ...clients].map((c, i) => (
-                  <ClientItem key={i} {...c} hidden={i >= clients.length} />
-                ))}
-              </ul>
-            </div>
-          </motion.div>
         </div>
 
         {/* Right: interactive word cube */}
@@ -110,6 +86,29 @@ export default function About() {
         </div>
       </div>
 
+      {/* Clients — full-width rotating banner */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.2 }}
+        className="relative border-t border-white/10 py-10"
+      >
+        <p className="px-8 md:px-14 font-display text-[10px] tracking-[0.25em] text-white/40 uppercase mb-6">Clients include</p>
+        <div
+          className="client-marquee relative overflow-hidden"
+          style={{
+            maskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 6%, black 94%, transparent)",
+          }}
+        >
+          <ul className="animate-client-marquee flex w-max items-center py-2" aria-label="Clients">
+            {[...clients, ...clients].map((c, i) => (
+              <ClientItem key={i} {...c} hidden={i >= clients.length} />
+            ))}
+          </ul>
+        </div>
+      </motion.div>
     </section>
   );
 }
