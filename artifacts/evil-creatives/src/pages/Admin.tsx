@@ -111,14 +111,40 @@ function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
 }
 
+// The Blob client only reports "Failed to retrieve the client token"; ask the
+// server directly so the admin sees the real reason.
+async function explainUploadFailure(pathname: string, pw: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${base}api/upload`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        type: "blob.generate-client-token",
+        payload: { pathname, clientPayload: JSON.stringify({ password: pw }), multipart: false },
+      }),
+    });
+    if (res.ok) return null;
+    const body = await res.json().catch(() => ({}));
+    return body.error ?? `Upload service returned ${res.status}`;
+  } catch {
+    return null;
+  }
+}
+
 async function uploadFile(file: File, folder: string, pw: string): Promise<MediaItem["src"]> {
-  const blob = await upload(`${folder}/${safeName(file.name)}`, file, {
-    access: "public",
-    handleUploadUrl: `${base}api/upload`,
-    clientPayload: JSON.stringify({ password: pw }),
-    multipart: file.size > 20 * 1024 * 1024,
-  });
-  return blob.url;
+  const pathname = `${folder}/${safeName(file.name)}`;
+  try {
+    const blob = await upload(pathname, file, {
+      access: "public",
+      handleUploadUrl: `${base}api/upload`,
+      clientPayload: JSON.stringify({ password: pw }),
+      multipart: file.size > 20 * 1024 * 1024,
+    });
+    return blob.url;
+  } catch (err) {
+    const reason = await explainUploadFailure(pathname, pw);
+    throw reason ? new Error(reason) : err;
+  }
 }
 
 function Preview({ item }: { item: MediaItem }) {
