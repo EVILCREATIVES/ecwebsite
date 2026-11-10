@@ -99,7 +99,7 @@ function Tile({ tile, width, onOpen, hidden }: { tile: Tile; width: number; onOp
       data-testid={`ads-frame-${media.label.toLowerCase().replace(/\s+/g, "-")}`}
     >
       {media.video ? (
-        <InViewVideo src={videoSrc(media)} poster={posterFor(media)} className="block w-full h-full" />
+        <InViewVideo src={videoSrc(media)} poster={posterFor(media)} className="absolute inset-0 block w-full h-full" />
       ) : (
         <img
           src={resolveSrc(media.src)}

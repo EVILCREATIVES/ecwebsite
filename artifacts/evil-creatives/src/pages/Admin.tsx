@@ -447,7 +447,8 @@ export default function Admin() {
     );
   }
 
-  const save = async () => {
+  const save = async (content: SiteContent | null = draft) => {
+    const draft = content;
     if (!draft) return;
     setStatus({ kind: "saving" });
     try {
@@ -466,6 +467,44 @@ export default function Admin() {
     }
   };
 
+  // Videos uploaded before covers existed: make a cover for each from one of
+  // its frames, then publish.
+  const missing = draft
+    ? [...draft.works.rowOne, ...draft.works.rowTwo, ...draft.campaigns].filter((it) => it.video && !posterFor(it)).length
+    : 0;
+  const makeMissingCovers = async () => {
+    if (!draft) return;
+    let done = 0;
+    let failed = 0;
+    const fill = async (items: MediaItem[], folder: string) => {
+      const out: MediaItem[] = [];
+      for (const it of items) {
+        if (it.video && !posterFor(it)) {
+          setStatus({ kind: "saving", msg: `Making covers… ${done + failed + 1} of ${missing}` });
+          try {
+            const file = await captureCover(resolveSrc(it.src), coverName(it.src));
+            out.push({ ...it, poster: await uploadFile(file, `${folder}/covers`, pw) });
+            done++;
+          } catch {
+            out.push(it);
+            failed++;
+          }
+        } else out.push(it);
+      }
+      return out;
+    };
+    const next: SiteContent = {
+      ...draft,
+      works: { rowOne: await fill(draft.works.rowOne, "works"), rowTwo: await fill(draft.works.rowTwo, "works") },
+      campaigns: await fill(draft.campaigns, "campaigns"),
+    };
+    setDraft(next);
+    if (done > 0) await save(next);
+    if (failed > 0)
+      setStatus({ kind: "error", msg: `${done} covers made, ${failed} failed — use “Cover” on those videos to add one by hand.` });
+    else setStatus({ kind: "ok", msg: `${done} covers made and published.` });
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-20 backdrop-blur-md bg-[rgba(11,10,22,0.85)] border-b border-white/10 px-6 md:px-10 py-4 flex flex-wrap items-center gap-4 justify-between">
@@ -480,6 +519,16 @@ export default function Admin() {
           <a href={base} target="_blank" rel="noreferrer" className="text-xs text-white/60 hover:text-primary">
             View site ↗
           </a>
+          {missing > 0 && (
+            <button
+              type="button"
+              disabled={status.kind === "saving"}
+              onClick={makeMissingCovers}
+              className="border border-primary/70 text-primary px-3 py-2 text-xs hover:bg-primary hover:text-black disabled:opacity-40"
+            >
+              Make missing covers ({missing})
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -501,7 +550,7 @@ export default function Admin() {
           <button
             type="button"
             disabled={!dirty || status.kind === "saving"}
-            onClick={save}
+            onClick={() => save()}
             className="bg-primary text-black font-display text-[11px] tracking-[0.25em] uppercase px-5 py-2.5 disabled:opacity-40"
           >
             {status.kind === "saving" ? "Saving…" : "Save & publish"}
