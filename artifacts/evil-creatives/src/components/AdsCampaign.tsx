@@ -1,12 +1,24 @@
 import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import { GridFX } from "@/components/BackgroundFX";
+import MediaLightbox from "@/components/MediaLightbox";
+import { useDriftScroll } from "@/hooks/useDriftScroll";
 import { resolveSrc, useSiteContent, type MediaItem as Media } from "@/lib/siteContent";
 
-function Frame({ media, className }: { media: Media; className?: string }) {
+function Frame({ media, className, onOpen }: { media: Media; className?: string; onOpen: () => void }) {
   return (
     <figure
-      className={`group relative overflow-hidden border border-white/8 ${className ?? ""}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${media.label}`}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+      className={`group relative overflow-hidden border border-white/8 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${className ?? ""}`}
       data-testid={`ads-frame-${media.label.toLowerCase().replace(/\s+/g, "-")}`}
     >
       {media.video ? (
@@ -14,6 +26,7 @@ function Frame({ media, className }: { media: Media; className?: string }) {
           src={resolveSrc(media.src)}
           autoPlay
           loop
+          draggable={false}
           muted
           playsInline
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
@@ -28,6 +41,11 @@ function Frame({ media, className }: { media: Media; className?: string }) {
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-70" />
+      {media.video && (
+        <span className="absolute top-4 right-4 h-9 w-9 flex items-center justify-center rounded-full border border-white/40 bg-black/40 text-white text-xs opacity-80 group-hover:opacity-100 group-hover:border-primary group-hover:text-primary transition-colors" aria-hidden="true">
+          ▶
+        </span>
+      )}
       <figcaption className="absolute bottom-0 left-0 p-5 md:p-6">
         <span className="font-display text-[11px] tracking-[0.25em] uppercase text-white/85">
           {media.label}
@@ -38,7 +56,8 @@ function Frame({ media, className }: { media: Media; className?: string }) {
 }
 
 // The original mosaic, repeated sideways: tall · wide · tall · two stacked wides.
-type Column = { kind: "tall" | "wide"; items: [Media] } | { kind: "stack"; items: Media[] };
+type Indexed = { media: Media; index: number };
+type Column = { kind: "tall" | "wide" | "stack"; items: Indexed[] };
 
 function toColumns(items: Media[]): Column[] {
   const cols: Column[] = [];
@@ -47,13 +66,9 @@ function toColumns(items: Media[]): Column[] {
   let p = 0;
   while (i < items.length) {
     const kind = pattern[p % pattern.length];
-    if (kind === "stack") {
-      cols.push({ kind, items: items.slice(i, i + 2) });
-      i += 2;
-    } else {
-      cols.push({ kind, items: [items[i]] });
-      i += 1;
-    }
+    const take = kind === "stack" ? 2 : 1;
+    cols.push({ kind, items: items.slice(i, i + take).map((media, k) => ({ media, index: i + k })) });
+    i += take;
     p += 1;
   }
   return cols;
@@ -66,140 +81,53 @@ const COL_WIDTH: Record<Column["kind"], string> = {
   stack: "w-[calc((var(--h)_-_1.25rem)/2*16/9)]",
 };
 
-function ColumnView({ col }: { col: Column }) {
+function ColumnView({ col, onOpen }: { col: Column; onOpen: (index: number) => void }) {
   return (
     <div className="shrink-0 h-full pr-5">
       <div className={`h-full flex flex-col gap-5 ${COL_WIDTH[col.kind]}`}>
-      {col.items.map((m, i) => (
-        <Frame key={i} media={m} className="flex-1" />
+      {col.items.map(({ media, index }) => (
+        <Frame key={index} media={media} className="flex-1" onOpen={() => onOpen(index)} />
       ))}
       </div>
     </div>
   );
 }
 
-const SPEED = 18; // px per second — deliberately slow
-
 /**
- * Horizontally scrolling strip: drifts slowly on its own, can be dragged with
- * the mouse, swiped on touch, or scrolled with a trackpad. Auto-drift pauses
- * while the visitor hovers or interacts, and is off for reduced-motion users.
+ * Horizontally scrolling strip: drifts slowly on its own, slows further on
+ * hover, and can be dragged, swiped or trackpad-scrolled. Clicking a frame
+ * opens it in a full-screen carousel.
  */
 function CampaignStrip({ items }: { items: Media[] }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<number | null>(null);
+  const dragged = useDriftScroll(ref, { speed: 18, hoverSpeed: 5 }, [items]);
   const cols = toColumns(items);
   // Render the sequence twice so the drift can loop seamlessly.
   const loop = [...cols, ...cols];
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let paused = false;
-    let raf = 0;
-    let last = performance.now();
-    let pos = el.scrollLeft;
-
-    const wrap = () => {
-      const half = el.scrollWidth / 2;
-      if (half > 0 && el.scrollLeft >= half) el.scrollLeft -= half;
-      pos = el.scrollLeft;
-    };
-
-    const tick = (t: number) => {
-      const dt = Math.min(t - last, 100) / 1000;
-      last = t;
-      if (!paused && !reduce) {
-        pos += SPEED * dt;
-        el.scrollLeft = pos;
-        if (el.scrollLeft >= el.scrollWidth / 2) wrap();
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-
-    // Mouse drag
-    let dragging = false;
-    let startX = 0;
-    let startScroll = 0;
-    const down = (e: PointerEvent) => {
-      if (e.pointerType !== "mouse" || e.button !== 0) return;
-      dragging = true;
-      startX = e.clientX;
-      startScroll = el.scrollLeft;
-      el.setPointerCapture(e.pointerId);
-      el.classList.add("cursor-grabbing");
-    };
-    const move = (e: PointerEvent) => {
-      if (!dragging) return;
-      el.scrollLeft = startScroll - (e.clientX - startX);
-      if (el.scrollLeft <= 0) {
-        el.scrollLeft += el.scrollWidth / 2;
-        startScroll += el.scrollWidth / 2;
-      }
-      wrap();
-    };
-    const up = (e: PointerEvent) => {
-      if (!dragging) return;
-      dragging = false;
-      el.releasePointerCapture(e.pointerId);
-      el.classList.remove("cursor-grabbing");
-    };
-    const enter = () => (paused = true);
-    const leave = () => {
-      paused = false;
-      pos = el.scrollLeft;
-    };
-    const touchStart = () => (paused = true);
-    const touchEnd = () => {
-      // Let native momentum settle before drifting again.
-      window.setTimeout(() => {
-        paused = false;
-        pos = el.scrollLeft;
-      }, 1200);
-    };
-    const onScroll = () => {
-      if (paused) {
-        if (el.scrollLeft <= 0) el.scrollLeft += el.scrollWidth / 2;
-        wrap();
-      }
-    };
-
-    el.addEventListener("pointerdown", down);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
-    el.addEventListener("pointercancel", up);
-    el.addEventListener("mouseenter", enter);
-    el.addEventListener("mouseleave", leave);
-    el.addEventListener("touchstart", touchStart, { passive: true });
-    el.addEventListener("touchend", touchEnd);
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(raf);
-      el.removeEventListener("pointerdown", down);
-      el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", up);
-      el.removeEventListener("pointercancel", up);
-      el.removeEventListener("mouseenter", enter);
-      el.removeEventListener("mouseleave", leave);
-      el.removeEventListener("touchstart", touchStart);
-      el.removeEventListener("touchend", touchEnd);
-      el.removeEventListener("scroll", onScroll);
-    };
-  }, [items]);
-
   return (
-    <div
-      ref={ref}
-      className="campaign-strip overflow-x-auto overflow-y-hidden cursor-grab select-none [--h:min(70vh,640px)] max-md:[--h:min(60vh,440px)]"
-      aria-label="Campaign frames — drag or scroll sideways"
-    >
-      <div className="flex w-max h-[var(--h)]">
-        {loop.map((col, i) => (
-          <ColumnView key={i} col={col} />
-        ))}
+    <>
+      <div
+        ref={ref}
+        // A click that ends a drag shouldn't open the carousel.
+        onClickCapture={(e) => {
+          if (dragged.current) {
+            e.stopPropagation();
+            dragged.current = false;
+          }
+        }}
+        className="campaign-strip overflow-x-auto overflow-y-hidden cursor-grab select-none [--h:min(70vh,640px)] max-md:[--h:min(60vh,440px)]"
+        aria-label="Campaign frames — drag or scroll sideways, click to enlarge"
+      >
+        <div className="flex w-max h-[var(--h)]">
+          {loop.map((col, i) => (
+            <ColumnView key={i} col={col} onOpen={setOpen} />
+          ))}
+        </div>
       </div>
-    </div>
+      <MediaLightbox items={items} index={open} onIndexChange={setOpen} onClose={() => setOpen(null)} />
+    </>
   );
 }
 
