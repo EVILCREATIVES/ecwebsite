@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import { GridFX } from "@/components/BackgroundFX";
 import MediaLightbox from "@/components/MediaLightbox";
-import { useDriftScroll } from "@/hooks/useDriftScroll";
+import { COPIES, repeatToMin, useDriftScroll } from "@/hooks/useDriftScroll";
 import { resolveSrc, useSiteContent, type MediaItem } from "@/lib/siteContent";
 
 function Marquee({
@@ -16,8 +16,10 @@ function Marquee({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const dragged = useDriftScroll(ref, { speed: 50, hoverSpeed: 12, reverse }, [items]);
-  // Rendered twice so the drift loops seamlessly.
-  const loop = [...items, ...items];
+  // One unit (repeated to be wider than any screen) is rendered COPIES times
+  // so the row loops seamlessly in both directions.
+  const unit = repeatToMin(items.map((item, index) => ({ item, index })), 8);
+  const loop = Array.from({ length: COPIES }, () => unit).flat();
   return (
     <div
       ref={ref}
@@ -31,14 +33,15 @@ function Marquee({
       aria-label="Works — drag or scroll sideways, click to enlarge"
     >
       <div className="flex w-max">
-        {loop.map((item, i) => {
-          const index = i % items.length;
+        {loop.map(({ item, index }, i) => {
+          // Only the first real set is exposed to keyboard and screen readers.
+          const isCopy = i >= items.length;
           const open = () => onOpen(index);
           return (
-            <div key={i} className="shrink-0 pr-5" aria-hidden={i >= items.length || undefined}>
+            <div key={i} className="shrink-0 pr-5" aria-hidden={isCopy || undefined}>
               <div
                 role="button"
-                tabIndex={i >= items.length ? -1 : 0}
+                tabIndex={isCopy ? -1 : 0}
                 aria-label={`Open ${item.label}`}
                 onClick={open}
                 onKeyDown={(e) => {

@@ -11,8 +11,10 @@ type Options = {
 
 /**
  * Makes a horizontally scrollable element drift on its own and loop forever.
- * The element's content must be rendered twice in a row (so half its scroll
- * width is one full sequence).
+ * The element's content must be rendered three times in a row (COPIES), and
+ * one copy must be wider than the element. The scroll position is always kept
+ * inside the middle copy, so dragging, swiping or trackpad scrolling in either
+ * direction never reaches a real edge.
  *
  * - Hovering eases the drift down to `hoverSpeed`.
  * - Mouse drag, touch swipe and trackpad scrolling all work; touch pauses the
@@ -22,6 +24,17 @@ type Options = {
  * Returns a ref that is `true` when the last pointer gesture was a drag, so
  * click handlers can ignore the click that ends a drag.
  */
+/** How many times the strip's content must be rendered. */
+export const COPIES = 3;
+
+/** Repeat `items` until there are at least `min` of them (for short lists). */
+export function repeatToMin<T>(items: T[], min: number): T[] {
+  if (items.length === 0) return items;
+  const out = [...items];
+  while (out.length < min) out.push(...items);
+  return out;
+}
+
 export function useDriftScroll(ref: RefObject<HTMLElement | null>, { speed, hoverSpeed, reverse = false }: Options, deps: unknown[] = []) {
   const dragged = useRef(false);
 
@@ -41,20 +54,19 @@ export function useDriftScroll(ref: RefObject<HTMLElement | null>, { speed, hove
     let raf = 0;
     let touchTimer = 0;
 
-    const half = () => el.scrollWidth / 2;
+    const unit = () => el.scrollWidth / COPIES;
     const wrap = () => {
-      const h = half();
-      if (h <= 0) return;
-      if (el.scrollLeft >= h) el.scrollLeft -= h;
-      else if (el.scrollLeft <= 0) el.scrollLeft += h;
+      const u = unit();
+      if (u <= 0) return;
+      if (el.scrollLeft >= 2 * u) el.scrollLeft -= u;
+      else if (el.scrollLeft < u) el.scrollLeft += u;
     };
 
     const tick = (t: number) => {
       const dt = Math.min(t - last, 100) / 1000;
       last = t;
-      if (!started && half() > 0) {
-        // Start reverse strips mid-way so they have room to drift left.
-        if (reverse && el.scrollLeft === 0) el.scrollLeft = half();
+      if (!started && unit() > 0) {
+        el.scrollLeft = unit(); // start at the middle copy
         pos = el.scrollLeft;
         started = true;
       }
@@ -117,8 +129,9 @@ export function useDriftScroll(ref: RefObject<HTMLElement | null>, { speed, hove
     const touchEnd = () => {
       touchTimer = window.setTimeout(() => (touching = false), 1200);
     };
+    // Wheel / trackpad / touch scrolling: keep looping in both directions.
     const onScroll = () => {
-      if (touching || dragging) wrap();
+      if (started) wrap();
     };
 
     el.addEventListener("pointerdown", down);

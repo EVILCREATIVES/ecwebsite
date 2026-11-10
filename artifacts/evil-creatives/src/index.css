@@ -166,3 +166,8 @@
 .campaign-strip::-webkit-scrollbar {
   display: none;
 }
+
+/* Stop horizontal swipes on the looping strips from triggering browser back/forward. */
+.campaign-strip {
+  overscroll-behavior-x: contain;
+}

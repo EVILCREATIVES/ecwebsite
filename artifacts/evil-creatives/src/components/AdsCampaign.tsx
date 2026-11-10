@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import { GridFX } from "@/components/BackgroundFX";
 import MediaLightbox from "@/components/MediaLightbox";
-import { useDriftScroll } from "@/hooks/useDriftScroll";
+import { COPIES, repeatToMin, useDriftScroll } from "@/hooks/useDriftScroll";
 import { resolveSrc, useSiteContent, type MediaItem as Media } from "@/lib/siteContent";
 
 function Frame({ media, className, onOpen }: { media: Media; className?: string; onOpen: () => void }) {
@@ -55,23 +55,40 @@ function Frame({ media, className, onOpen }: { media: Media; className?: string;
   );
 }
 
-// The original mosaic, repeated sideways: tall · wide · tall · two stacked wides.
+// The original mosaic, repeated sideways: tall · wide · tall · two stacked.
+// Only videos fill a full-height slot (tall or wide); images always sit two to
+// a column, so a still never gets blown up to the full height of the strip.
 type Indexed = { media: Media; index: number };
 type Column = { kind: "tall" | "wide" | "stack"; items: Indexed[] };
 
-function toColumns(items: Media[]): Column[] {
-  const cols: Column[] = [];
+function layout(list: Indexed[]): Column[] {
+  const videos = list.filter((x) => x.media.video);
+  const images = list.filter((x) => !x.media.video);
   const pattern = ["tall", "wide", "tall", "stack"] as const;
-  let i = 0;
-  let p = 0;
-  while (i < items.length) {
+  const cols: Column[] = [];
+  for (let p = 0; videos.length || images.length; p++) {
     const kind = pattern[p % pattern.length];
-    const take = kind === "stack" ? 2 : 1;
-    cols.push({ kind, items: items.slice(i, i + take).map((media, k) => ({ media, index: i + k })) });
-    i += take;
-    p += 1;
+    if (kind !== "stack" && videos.length) {
+      cols.push({ kind, items: [videos.shift()!] });
+    } else if (kind !== "stack" && !images.length) {
+      continue;
+    } else {
+      // Stacks take images first, topped up with videos if images run out.
+      const pair = images.splice(0, 2);
+      while (pair.length < 2 && videos.length) pair.push(videos.shift()!);
+      cols.push({ kind: "stack", items: pair });
+    }
   }
   return cols;
+}
+
+function toColumns(items: Media[]): Column[] {
+  const indexed = items.map((media, index) => ({ media, index }));
+  const cols = layout(indexed);
+  // An odd number of images would leave one image alone in a column —
+  // lay the sequence out twice instead, which always pairs them up.
+  const lonely = cols.some((c) => c.kind === "stack" && c.items.length === 1 && !c.items[0].media.video);
+  return lonely ? layout([...indexed, ...indexed]) : cols;
 }
 
 const COL_WIDTH: Record<Column["kind"], string> = {
@@ -102,9 +119,10 @@ function CampaignStrip({ items }: { items: Media[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<number | null>(null);
   const dragged = useDriftScroll(ref, { speed: 18, hoverSpeed: 5 }, [items]);
-  const cols = toColumns(items);
-  // Render the sequence twice so the drift can loop seamlessly.
-  const loop = [...cols, ...cols];
+  // One unit must be wider than any screen; it's rendered COPIES times so the
+  // strip loops seamlessly in both directions.
+  const unit = repeatToMin(toColumns(items), 8);
+  const loop = Array.from({ length: COPIES }, () => unit).flat();
 
   return (
     <>
