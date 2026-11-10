@@ -1,31 +1,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 
-type Options = {
-  /** Drift speed in px per second. */
-  speed: number;
-  /** Speed while the mouse is over the strip. */
-  hoverSpeed: number;
-  /** Drift towards the left edge instead of the right. */
-  reverse?: boolean;
-};
-
-/**
- * Makes a horizontally scrollable element drift on its own and loop forever.
- * The element's content must be rendered three times in a row (COPIES), and
- * one copy must be wider than the element. The scroll position is always kept
- * inside the middle copy, so dragging, swiping or trackpad scrolling in either
- * direction never reaches a real edge.
- *
- * - Hovering eases the drift down to `hoverSpeed`.
- * - Mouse drag, touch swipe and trackpad scrolling all work; touch pauses the
- *   drift briefly so native momentum can settle.
- * - Reduced-motion visitors get no drift, but can still scroll and drag.
- *
- * Returns a ref that is `true` when the last pointer gesture was a drag, so
- * click handlers can ignore the click that ends a drag.
- */
-/** How many times the strip's content must be rendered. */
-export const COPIES = 3;
+/** How many times a strip's content must be rendered back to back. */
+export const COPIES = 2;
 
 /** Repeat `items` until there are at least `min` of them (for short lists). */
 export function repeatToMin<T>(items: T[], min: number): T[] {
@@ -35,126 +11,146 @@ export function repeatToMin<T>(items: T[], min: number): T[] {
   return out;
 }
 
-export function useDriftScroll(ref: RefObject<HTMLElement | null>, { speed, hoverSpeed, reverse = false }: Options, deps: unknown[] = []) {
+type Options = {
+  /** Drift speed in px per second. */
+  speed: number;
+  /** Speed while the mouse is over the strip. */
+  hoverSpeed: number;
+  /** Drift towards the right instead of the left. */
+  reverse?: boolean;
+};
+
+/**
+ * Endless horizontal strip, moved with a GPU transform (no native scrolling,
+ * so slow drifts glide smoothly instead of stepping pixel by pixel).
+ *
+ * `viewport` is the clipping element; `track` holds the content rendered
+ * COPIES times, and one copy must be at least as wide as the viewport.
+ *
+ * - Drifts on its own; hovering eases it down to `hoverSpeed`.
+ * - Mouse drag and touch swipe (with momentum) in either direction.
+ * - Horizontal trackpad / shift+wheel scrolling.
+ * - Reduced-motion visitors get no drift but can still drag.
+ *
+ * Returns a ref that is `true` when the last gesture was a drag, so click
+ * handlers can ignore the click that ends a drag.
+ */
+export function useDriftScroll(
+  viewport: RefObject<HTMLElement | null>,
+  track: RefObject<HTMLElement | null>,
+  { speed, hoverSpeed, reverse = false }: Options,
+  deps: unknown[] = [],
+) {
   const dragged = useRef(false);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const vp = viewport.current;
+    const tr = track.current;
+    if (!vp || !tr) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const dir = reverse ? -1 : 1;
 
+    let unit = tr.scrollWidth / COPIES;
+    const ro = new ResizeObserver(() => (unit = tr.scrollWidth / COPIES));
+    ro.observe(tr);
+
+    let offset = 0; // how far the content has moved left, in px (unbounded)
     let hovering = false;
-    let touching = false;
-    let dragging = false;
+    let holding = false;
     let current = reduce ? 0 : speed;
-    let pos = el.scrollLeft;
-    let started = false;
+    let velocity = 0; // momentum after a swipe/drag, px per second
     let last = performance.now();
     let raf = 0;
-    let touchTimer = 0;
 
-    const unit = () => el.scrollWidth / COPIES;
-    const wrap = () => {
-      const u = unit();
-      if (u <= 0) return;
-      if (el.scrollLeft >= 2 * u) el.scrollLeft -= u;
-      else if (el.scrollLeft < u) el.scrollLeft += u;
+    const apply = () => {
+      if (unit <= 0) return;
+      const m = ((offset % unit) + unit) % unit;
+      tr.style.transform = `translate3d(${-m}px,0,0)`;
     };
 
     const tick = (t: number) => {
-      const dt = Math.min(t - last, 100) / 1000;
+      const dt = Math.min(t - last, 64) / 1000;
       last = t;
-      if (!started && unit() > 0) {
-        el.scrollLeft = unit(); // start at the middle copy
-        pos = el.scrollLeft;
-        started = true;
-      }
-      // Something else moved the strip (drag, wheel, swipe) — follow it.
-      if (Math.abs(el.scrollLeft - pos) > 2) pos = el.scrollLeft;
-
-      const target = reduce || touching || dragging ? 0 : hovering ? hoverSpeed : speed;
+      const target = reduce || holding ? 0 : hovering ? hoverSpeed : speed;
       current += (target - current) * Math.min(1, dt * 3); // ease between speeds
-      if (Math.abs(current) > 0.01) {
-        pos += dir * current * dt;
-        el.scrollLeft = pos;
-        const before = el.scrollLeft;
-        wrap();
-        if (el.scrollLeft !== before) pos = el.scrollLeft;
+      offset += dir * current * dt;
+      if (!holding && Math.abs(velocity) > 1) {
+        offset += velocity * dt;
+        velocity *= Math.pow(0.04, dt); // momentum fades out over ~1s
       }
+      apply();
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
 
-    // Mouse drag. Pointer capture only starts once the mouse has really moved,
-    // so a plain click still reaches the item underneath.
+    // Drag / swipe. Capture only starts once the pointer has really moved,
+    // so a plain click or tap still reaches the item underneath.
     let startX = 0;
-    let startScroll = 0;
+    let startOffset = 0;
+    let lastX = 0;
+    let lastT = 0;
     let pointerId = -1;
     const down = (e: PointerEvent) => {
-      if (e.pointerType !== "mouse" || e.button !== 0) return;
-      dragging = true;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      holding = true;
       dragged.current = false;
-      startX = e.clientX;
-      startScroll = el.scrollLeft;
+      velocity = 0;
+      startX = lastX = e.clientX;
+      lastT = e.timeStamp;
+      startOffset = offset;
       pointerId = e.pointerId;
     };
     const move = (e: PointerEvent) => {
-      if (!dragging) return;
+      if (!holding || e.pointerId !== pointerId) return;
       const dx = e.clientX - startX;
-      if (!dragged.current && Math.abs(dx) > 5) {
+      if (!dragged.current && Math.abs(dx) > 6) {
         dragged.current = true;
-        el.setPointerCapture(pointerId);
-        el.classList.add("cursor-grabbing");
+        vp.setPointerCapture(pointerId);
+        vp.classList.add("cursor-grabbing");
       }
       if (!dragged.current) return;
-      el.scrollLeft = startScroll - dx;
-      const before = el.scrollLeft;
-      wrap();
-      startScroll += el.scrollLeft - before;
-      pos = el.scrollLeft;
+      offset = startOffset - dx;
+      const dtMove = (e.timeStamp - lastT) / 1000;
+      if (dtMove > 0) velocity = -(e.clientX - lastX) / dtMove;
+      lastX = e.clientX;
+      lastT = e.timeStamp;
     };
-    const up = () => {
-      if (!dragging) return;
-      dragging = false;
-      if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId);
-      el.classList.remove("cursor-grabbing");
+    const up = (e: PointerEvent) => {
+      if (!holding || e.pointerId !== pointerId) return;
+      holding = false;
+      // No momentum if the pointer paused before letting go.
+      if (!dragged.current || e.timeStamp - lastT > 80) velocity = 0;
+      velocity = Math.max(-4000, Math.min(4000, velocity));
+      if (vp.hasPointerCapture(pointerId)) vp.releasePointerCapture(pointerId);
+      vp.classList.remove("cursor-grabbing");
     };
-    const enter = () => (hovering = true);
-    const leave = () => (hovering = false);
-    const touchStart = () => {
-      window.clearTimeout(touchTimer);
-      touching = true;
-    };
-    const touchEnd = () => {
-      touchTimer = window.setTimeout(() => (touching = false), 1200);
-    };
-    // Wheel / trackpad / touch scrolling: keep looping in both directions.
-    const onScroll = () => {
-      if (started) wrap();
+    const enter = (e: PointerEvent) => e.pointerType === "mouse" && (hovering = true);
+    const leave = (e: PointerEvent) => e.pointerType === "mouse" && (hovering = false);
+    const wheel = (e: WheelEvent) => {
+      const dx = e.deltaX || (e.shiftKey ? e.deltaY : 0);
+      if (Math.abs(dx) <= Math.abs(e.shiftKey ? 0 : e.deltaY)) return; // vertical: let the page scroll
+      e.preventDefault();
+      offset += dx;
+      velocity = 0;
     };
 
-    el.addEventListener("pointerdown", down);
-    el.addEventListener("pointermove", move);
-    el.addEventListener("pointerup", up);
-    el.addEventListener("pointercancel", up);
-    el.addEventListener("mouseenter", enter);
-    el.addEventListener("mouseleave", leave);
-    el.addEventListener("touchstart", touchStart, { passive: true });
-    el.addEventListener("touchend", touchEnd);
-    el.addEventListener("scroll", onScroll, { passive: true });
+    vp.addEventListener("pointerdown", down);
+    vp.addEventListener("pointermove", move);
+    vp.addEventListener("pointerup", up);
+    vp.addEventListener("pointercancel", up);
+    vp.addEventListener("pointerenter", enter);
+    vp.addEventListener("pointerleave", leave);
+    vp.addEventListener("wheel", wheel, { passive: false });
     return () => {
       cancelAnimationFrame(raf);
-      window.clearTimeout(touchTimer);
-      el.removeEventListener("pointerdown", down);
-      el.removeEventListener("pointermove", move);
-      el.removeEventListener("pointerup", up);
-      el.removeEventListener("pointercancel", up);
-      el.removeEventListener("mouseenter", enter);
-      el.removeEventListener("mouseleave", leave);
-      el.removeEventListener("touchstart", touchStart);
-      el.removeEventListener("touchend", touchEnd);
-      el.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+      vp.removeEventListener("pointerdown", down);
+      vp.removeEventListener("pointermove", move);
+      vp.removeEventListener("pointerup", up);
+      vp.removeEventListener("pointercancel", up);
+      vp.removeEventListener("pointerenter", enter);
+      vp.removeEventListener("pointerleave", leave);
+      vp.removeEventListener("wheel", wheel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speed, hoverSpeed, reverse, ...deps]);

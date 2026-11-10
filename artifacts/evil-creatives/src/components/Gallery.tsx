@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 import { GridFX } from "@/components/BackgroundFX";
+import InViewVideo from "@/components/InViewVideo";
 import MediaLightbox from "@/components/MediaLightbox";
 import { COPIES, repeatToMin, useDriftScroll } from "@/hooks/useDriftScroll";
 import { resolveSrc, useSiteContent, type MediaItem } from "@/lib/siteContent";
@@ -14,28 +15,29 @@ function Marquee({
   reverse?: boolean;
   onOpen: (index: number) => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const dragged = useDriftScroll(ref, { speed: 50, hoverSpeed: 12, reverse }, [items]);
-  // One unit (repeated to be wider than any screen) is rendered COPIES times
-  // so the row loops seamlessly in both directions.
+  const viewport = useRef<HTMLDivElement>(null);
+  const track = useRef<HTMLDivElement>(null);
+  // One unit (repeated to be wider than any screen — 8 cards ≥ 2,400px) is
+  // rendered COPIES times so the row loops seamlessly in both directions.
   const unit = repeatToMin(items.map((item, index) => ({ item, index })), 8);
   const loop = Array.from({ length: COPIES }, () => unit).flat();
+  const dragged = useDriftScroll(viewport, track, { speed: 50, hoverSpeed: 12, reverse }, [loop.length]);
   return (
     <div
-      ref={ref}
+      ref={viewport}
       onClickCapture={(e) => {
         if (dragged.current) {
           e.stopPropagation();
           dragged.current = false;
         }
       }}
-      className="campaign-strip overflow-x-auto overflow-y-hidden cursor-grab select-none"
+      className="overflow-hidden cursor-grab select-none touch-pan-y"
       aria-label="Works — drag or scroll sideways, click to enlarge"
     >
-      <div className="flex w-max">
+      <div ref={track} className="flex w-max will-change-transform">
         {loop.map(({ item, index }, i) => {
           // Only the first real set is exposed to keyboard and screen readers.
-          const isCopy = i >= items.length;
+          const isCopy = i >= unit.length || i >= items.length;
           const open = () => onOpen(index);
           return (
             <div key={i} className="shrink-0 pr-5" aria-hidden={isCopy || undefined}>
@@ -54,13 +56,8 @@ function Marquee({
                 data-testid={`gallery-item-${reverse ? "b" : "a"}-${i}`}
               >
                 {item.video ? (
-                  <video
+                  <InViewVideo
                     src={resolveSrc(item.src)}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    draggable={false}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 ) : (
