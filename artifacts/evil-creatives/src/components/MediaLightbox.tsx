@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { resolveSrc, type MediaItem } from "@/lib/siteContent";
+import { posterFor, resolveSrc, type MediaItem } from "@/lib/siteContent";
 
 /**
  * Full-screen carousel for Works / Campaigns assets. Arrow keys, on-screen
@@ -68,6 +68,7 @@ export default function MediaLightbox({
                   <video
                     key={item.src}
                     src={resolveSrc(item.src)}
+                    poster={posterFor(item)}
                     controls
                     autoPlay
                     playsInline

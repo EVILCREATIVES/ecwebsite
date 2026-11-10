@@ -31,6 +31,7 @@ export default function AppDevelopment() {
         >
           <video
             src={`${import.meta.env.BASE_URL}videos/feature-app.mp4`}
+            poster={`${import.meta.env.BASE_URL}images/posters/feature-app.jpg`}
             autoPlay
             loop
             muted

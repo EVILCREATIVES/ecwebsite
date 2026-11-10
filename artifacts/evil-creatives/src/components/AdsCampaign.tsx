@@ -4,7 +4,7 @@ import { GridFX } from "@/components/BackgroundFX";
 import InViewVideo from "@/components/InViewVideo";
 import MediaLightbox from "@/components/MediaLightbox";
 import { COPIES, useDriftScroll } from "@/hooks/useDriftScroll";
-import { resolveSrc, useSiteContent, type MediaItem as Media } from "@/lib/siteContent";
+import { posterFor, resolveSrc, useSiteContent, videoSrc, type MediaItem as Media } from "@/lib/siteContent";
 
 const GAP = 16; // px between tiles, both directions
 
@@ -24,7 +24,8 @@ function loadRatio(item: Media): Promise<number> {
       resolve(r);
     };
     const timer = window.setTimeout(() => done(16, 9), 8000); // don't hang on a broken file
-    if (item.video) {
+    const cover = posterFor(item); // a cover has the video's shape and loads faster
+    if (item.video && !cover) {
       const v = document.createElement("video");
       v.preload = "metadata";
       v.muted = true;
@@ -35,7 +36,7 @@ function loadRatio(item: Media): Promise<number> {
       const img = new Image();
       img.onload = () => (window.clearTimeout(timer), done(img.naturalWidth, img.naturalHeight));
       img.onerror = () => (window.clearTimeout(timer), done(16, 9));
-      img.src = src;
+      img.src = cover ?? src;
     }
   });
 }
@@ -98,7 +99,7 @@ function Tile({ tile, width, onOpen, hidden }: { tile: Tile; width: number; onOp
       data-testid={`ads-frame-${media.label.toLowerCase().replace(/\s+/g, "-")}`}
     >
       {media.video ? (
-        <InViewVideo src={resolveSrc(media.src)} className="block w-full h-full" />
+        <InViewVideo src={videoSrc(media)} poster={posterFor(media)} className="block w-full h-full" />
       ) : (
         <img
           src={resolveSrc(media.src)}

@@ -9,6 +9,8 @@ export type MediaItem = {
   src: string;
   label: string;
   video?: boolean;
+  /** Cover image shown for a video before it plays. */
+  poster?: string;
 };
 
 export type SiteContent = {
@@ -47,6 +49,26 @@ const base = import.meta.env.BASE_URL;
 
 export function resolveSrc(src: string): string {
   return /^https?:\/\//.test(src) ? src : `${base}${src.replace(/^\//, "")}`;
+}
+
+/**
+ * Cover image for a video. Uses the item's own cover when it has one; the
+ * videos bundled with the site have pre-made covers in images/posters/.
+ */
+export function posterFor(item: MediaItem): string | undefined {
+  if (!item.video) return undefined;
+  if (item.poster) return resolveSrc(item.poster);
+  const local = item.src.match(/^\/?videos\/([^/]+)\.mp4$/);
+  return local ? resolveSrc(`images/posters/${local[1]}.jpg`) : undefined;
+}
+
+/**
+ * Video URL that makes browsers draw the first frame even without a cover
+ * (iPhones otherwise show an empty box until the video plays).
+ */
+export function videoSrc(item: MediaItem): string {
+  const src = resolveSrc(item.src);
+  return (posterFor(item) || src.includes("#")) ? src : `${src}#t=0.1`;
 }
 
 export const CONTENT_QUERY_KEY = ["site-content"] as const;

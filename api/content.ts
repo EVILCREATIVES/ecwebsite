@@ -27,7 +27,7 @@ export async function GET(): Promise<Response> {
   }
 }
 
-type Item = { src: string; label: string; video?: boolean };
+type Item = { src: string; label: string; video?: boolean; poster?: string };
 
 function validItems(v: unknown): v is Item[] {
   return (

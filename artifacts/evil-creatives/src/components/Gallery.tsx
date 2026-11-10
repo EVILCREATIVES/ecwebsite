@@ -4,7 +4,7 @@ import { GridFX } from "@/components/BackgroundFX";
 import InViewVideo from "@/components/InViewVideo";
 import MediaLightbox from "@/components/MediaLightbox";
 import { COPIES, repeatToMin, useDriftScroll } from "@/hooks/useDriftScroll";
-import { resolveSrc, useSiteContent, type MediaItem } from "@/lib/siteContent";
+import { posterFor, resolveSrc, useSiteContent, videoSrc, type MediaItem } from "@/lib/siteContent";
 
 function Marquee({
   items,
@@ -57,7 +57,8 @@ function Marquee({
               >
                 {item.video ? (
                   <InViewVideo
-                    src={resolveSrc(item.src)}
+                    src={videoSrc(item)}
+                    poster={posterFor(item)}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                 ) : (

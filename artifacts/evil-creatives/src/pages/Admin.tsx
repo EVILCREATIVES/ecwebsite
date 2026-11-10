@@ -5,6 +5,7 @@ import {
   CONTENT_QUERY_KEY,
   defaultContent,
   fetchContent,
+  posterFor,
   resolveSrc,
   type MediaItem,
   type SiteContent,
@@ -147,10 +148,64 @@ async function uploadFile(file: File, folder: string, pw: string): Promise<Media
   }
 }
 
+/**
+ * Grab a frame from a video (a local file, or a URL already on the site) and
+ * return it as a JPEG cover image. Skips the first second, which is often a
+ * black fade-in.
+ */
+function captureCover(source: File | string, name: string): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const url = typeof source === "string" ? source : URL.createObjectURL(source);
+    const v = document.createElement("video");
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      if (typeof source !== "string") URL.revokeObjectURL(url);
+      v.removeAttribute("src");
+      v.load();
+    };
+    const fail = (msg: string) => (cleanup(), reject(new Error(msg)));
+    const timer = window.setTimeout(() => fail("Timed out reading the video"), 20000);
+    v.crossOrigin = "anonymous";
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = "auto";
+    v.onerror = () => fail("Couldn't read the video");
+    v.onloadedmetadata = () => {
+      const d = Number.isFinite(v.duration) ? v.duration : 0;
+      v.currentTime = Math.min(1, d * 0.25);
+    };
+    v.onseeked = () => {
+      const scale = Math.min(1, 1280 / (v.videoWidth || 1280));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round((v.videoWidth || 1280) * scale);
+      canvas.height = Math.round((v.videoHeight || 720) * scale);
+      try {
+        canvas.getContext("2d")!.drawImage(v, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => {
+            cleanup();
+            if (blob) resolve(new File([blob], name, { type: "image/jpeg" }));
+            else reject(new Error("Couldn't create the cover"));
+          },
+          "image/jpeg",
+          0.82,
+        );
+      } catch {
+        fail("The browser blocked reading this video");
+      }
+    };
+    v.src = url;
+  });
+}
+
+function coverName(videoName: string) {
+  return `${videoName.replace(/^.*\//, "").replace(/\.[^.]+$/, "")}-cover.jpg`;
+}
+
 function Preview({ item }: { item: MediaItem }) {
   const cls = "w-full h-full object-cover";
   return item.video ? (
-    <video src={resolveSrc(item.src)} muted loop autoPlay playsInline className={cls} />
+    <video src={resolveSrc(item.src)} poster={posterFor(item)} muted loop autoPlay playsInline className={cls} />
   ) : (
     <img src={resolveSrc(item.src)} alt={item.label} className={cls} />
   );
@@ -161,11 +216,13 @@ function FileButton({
   onFile,
   disabled,
   primary,
+  accept = "image/*,video/*",
 }: {
   label: string;
   onFile: (f: File) => void;
   disabled?: boolean;
   primary?: boolean;
+  accept?: string;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
@@ -173,7 +230,7 @@ function FileButton({
       <input
         ref={ref}
         type="file"
-        accept="image/*,video/*"
+        accept={accept}
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -221,14 +278,38 @@ function ListEditor({
     try {
       const src = await uploadFile(file, folder, pw);
       const video = file.type.startsWith("video/");
+      // Videos get a cover made automatically from one of their frames.
+      let poster: string | undefined;
+      if (video) {
+        try {
+          poster = await uploadFile(await captureCover(file, coverName(file.name)), `${folder}/covers`, pw);
+        } catch {
+          setError("Video uploaded, but its cover couldn't be made automatically — use “Cover” to add one.");
+        }
+      }
       if (index === "new") {
         const label = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
-        onChange([...items, { src, video, label }]);
+        onChange([...items, { src, video, label, poster }]);
       } else {
-        onChange(items.map((it, i) => (i === index ? { ...it, src, video } : it)));
+        onChange(items.map((it, i) => (i === index ? { ...it, src, video, poster } : it)));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const setCover = async (index: number, source: File | "auto") => {
+    const item = items[index];
+    setBusy(index);
+    setError("");
+    try {
+      const file = source === "auto" ? await captureCover(resolveSrc(item.src), coverName(item.src)) : source;
+      const poster = await uploadFile(file, `${folder}/covers`, pw);
+      onChange(items.map((it, i) => (i === index ? { ...it, poster } : it)));
+    } catch (err) {
+      setError(err instanceof Error ? `Cover: ${err.message}` : "Cover failed");
     } finally {
       setBusy(null);
     }
@@ -260,7 +341,7 @@ function ListEditor({
               <Preview item={item} />
               <span className="absolute top-2 left-2 bg-black/70 px-2 py-0.5 text-[10px] font-display tracking-widest">
                 {String(i + 1).padStart(2, "0")}
-                {item.video ? " · VIDEO" : ""}
+                {item.video ? (posterFor(item) ? " · VIDEO" : " · VIDEO · NO COVER") : ""}
               </span>
               {busy === i && (
                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-xs">Uploading…</div>
@@ -276,6 +357,20 @@ function ListEditor({
               />
               <div className="flex flex-wrap gap-2">
                 <FileButton label="Replace" disabled={busy !== null} onFile={(f) => doUpload(f, i)} />
+                {item.video && (
+                  <>
+                    <FileButton label="Cover" accept="image/*" disabled={busy !== null} onFile={(f) => setCover(i, f)} />
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      onClick={() => setCover(i, "auto")}
+                      title="Make a cover from a frame of the video"
+                      className="border border-white/20 px-2.5 py-1.5 text-xs hover:border-primary hover:text-primary disabled:opacity-40"
+                    >
+                      Auto cover
+                    </button>
+                  </>
+                )}
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="border border-white/20 px-2.5 py-1.5 text-xs disabled:opacity-30 hover:border-primary" aria-label="Move earlier">
                   ←
                 </button>
